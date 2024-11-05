@@ -187,11 +187,20 @@ class AutomationService {
 }
 
 app.get('/process', async (req, res) => {
-    const { url } = req.query;
+    let { url } = req.query;
     const service = new AutomationService();
     
     if (!url) {
         return res.status(400).json({ error: 'URL requerida' });
+    }
+
+    const decodedUrl = decodeURIComponent(url);
+
+    const match = decodedUrl.match(/url=(.*?)(&|$)/);
+    if (match && match[1]) {
+        url = match[1];
+    } else {
+        return res.status(400).json({ error: 'URL inválida' });
     }
 
     console.log('Procesando URL:', url);
@@ -201,7 +210,7 @@ app.get('/process', async (req, res) => {
         await service.createPage();
         await service.injectAutomationCode();
         
-        console.log('Navegando a la URL...');
+        console.log('Navegando a la URL:', url);
         await service.page.goto(url, { waitUntil: 'networkidle0' });
         console.log('Página cargada');
         
