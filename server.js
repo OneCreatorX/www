@@ -49,7 +49,7 @@ class AutomationService {
     }
 
     async injectAutomationCode() {
-        await this.page.evaluate(() => {
+        const automationCode = `
             window.sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
             
             window.getRandomDelay = (min, max) => {
@@ -131,7 +131,9 @@ class AutomationService {
                 }
                 return false;
             };
-        });
+        `;
+        await this.page.evaluate(automationCode);
+        console.log('Código de automatización inyectado correctamente');
     }
 
     async handleCaptchas() {
@@ -159,6 +161,10 @@ class AutomationService {
 
     async processPage() {
         return await this.page.evaluate(async () => {
+            if (typeof window.findClickableElements !== 'function') {
+                console.error('findClickableElements no está definida');
+                return;
+            }
             const elements = window.findClickableElements();
             console.log(`Encontrados ${elements.length} elementos clickeables`);
             
@@ -206,6 +212,7 @@ app.get('/process', async (req, res) => {
         
         while (attempts < maxAttempts) {
             console.log(`Intento ${attempts + 1} de ${maxAttempts}`);
+            await service.page.waitForTimeout(5000);
             await service.processPage();
             await service.page.waitForTimeout(2000);
             attempts++;
